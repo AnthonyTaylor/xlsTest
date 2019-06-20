@@ -1,0 +1,7 @@
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\bin\Debug\xlsxToDataBase.exe.config
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\bin\Debug\xlsxToDataBase.exe
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\bin\Debug\xlsxToDataBase.pdb
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\obj\Debug\xlsxToDataBase.csprojAssemblyReference.cache
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\obj\Debug\xlsxToDataBase.csproj.CoreCompileInputs.cache
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\obj\Debug\xlsxToDataBase.exe
+C:\Users\Anthony\source\repos\xlsxToDataBase\xlsxToDataBase\obj\Debug\xlsxToDataBase.pdb
