@@ -26,12 +26,13 @@ namespace xlsxToDataBase
                 conn.Open();
 
                 //clear existing data
-                DeleteData(conn);
+               SqlCommand deleteCommand = SqlDeleteCommand(conn);
+                RunDBCommand(deleteCommand);
                 PrintColourMessage(ConsoleColor.DarkGreen, "Table cleared");
 
                 //Insert data
                 SqlCommand insertCommand = SqlInsertStatement(Xdt, conn);
-                connectToDB(insertCommand);
+                RunDBCommand(insertCommand);
                 PrintColourMessage(ConsoleColor.DarkGreen, "All rows inserted");
 
                 //add a check to ensure each row is added
@@ -51,10 +52,10 @@ namespace xlsxToDataBase
             Console.ReadKey();
         }
 
-        static void DeleteData(SqlConnection conn)
+        static SqlCommand SqlDeleteCommand(SqlConnection conn)
         {
-            SqlCommand delTable = new SqlCommand($"DELETE FROM {DBTable}", conn);
-            delTable.ExecuteNonQuery();
+             return new SqlCommand($"DELETE FROM {DBTable}", conn);
+          
         }
 
 
@@ -126,7 +127,7 @@ namespace xlsxToDataBase
         }
 
 
-        static void connectToDB(SqlCommand cmd)
+        static void RunDBCommand(SqlCommand cmd)
         {
             cmd.ExecuteNonQuery();
         }
