@@ -10,84 +10,129 @@ namespace xlsxToDataBase
 {
     class Program
     {
+        static string DBString = ConfigurationManager.ConnectionStrings["DBString"].ConnectionString;
+        static string DBTable = ConfigurationManager.AppSettings["dbTable"];
+
         static void Main(string[] args)
         {
             //DB connection
-            string DBString = ConfigurationManager.ConnectionStrings["DBString"].ConnectionString;
-            string DBTable = ConfigurationManager.AppSettings["dbTable"];
             SqlConnection conn = new SqlConnection(DBString);
-            conn.Open();
 
             //Excel connection 
-            string ExcelFile = ConfigurationManager.ConnectionStrings["ExcelFile"].ConnectionString;
-            OleDbConnection Xcon = new OleDbConnection(ExcelFile);
-            OleDbDataAdapter Xda = new OleDbDataAdapter("select * from [Sheet1$]", Xcon);
-            DataTable Xdt = new DataTable();
-            Xda.Fill(Xdt);
+            DataTable Xdt = excelConnection();
+
             try
             {
-                SqlCommand delTable = new SqlCommand($"DELETE FROM {DBTable}", conn);
-                delTable.ExecuteNonQuery();
+                conn.Open();
 
-                int numberOfColumns = Xdt.Columns.Count;
+                //clear existing data
+                DeleteData(conn);
+                PrintColourMessage(ConsoleColor.DarkGreen, "Table cleared");
 
-                foreach (DataRow row in Xdt.Rows) // Loop over the rows.
-                {
-                    //loop through each column here to add the values to an array
-                    //swap the last two items in the array
-                    //send array 
-                    List<object> lstRow = new List<object>(); ;
+                //Insert data
+                SqlCommand insertCommand = SqlInsertStatement(Xdt, conn);
+                connectToDB(insertCommand);
+                PrintColourMessage(ConsoleColor.DarkGreen, "All rows inserted");
 
-                    // go through each column in the row
-                    for (int i = 0; i < numberOfColumns; i++)
-                    {
-                        if (i == (numberOfColumns - 1) || i == (numberOfColumns - 2))
-                        {
-                            lstRow.Add(row[i].ToString());
-                        }
-                        else
-                        {
-                            lstRow.Add(row[i]);
-                        }
+                //add a check to ensure each row is added
+                //catch error, put all failed rows into a log.txt file
+                //cmd.ExecuteNonQuery();
 
-                        if (lstRow[i].GetType() == typeof(System.String))
-                        {
-                            lstRow[i] = "\'" + lstRow[i] + "\'";
-                        }
-                        if (lstRow[i].GetType() == typeof(System.DateTime))
-                        {
-                            // string startdate = DateTime.Parse("25/12/2008").ToString("yyyy-MM-dd");
-                            // arrRow[i] = startdate;
-                            lstRow[i] = Convert.ToString("\'2008-01-10\'");
-                        }
-
-                        PrintColourMessage(ConsoleColor.Magenta, "Row: " + i + " " + lstRow[i].ToString() + " Type: " + lstRow[i].GetType());
-                    }
-                    string temp = lstRow[numberOfColumns - 1].ToString();
-                    lstRow[numberOfColumns - 1] = lstRow[numberOfColumns - 2];
-                    lstRow[numberOfColumns - 2] = temp;
-
-                    string strInsertCommand = "";
-                    foreach (object item in lstRow)
-                    {
-                        strInsertCommand += item + ", ";
-                    }
-                    strInsertCommand = strInsertCommand.Remove(strInsertCommand.Length - 2); //removes trailing space and comma
-                    PrintColourMessage(ConsoleColor.Yellow, strInsertCommand);
-                    SqlCommand cmd = new SqlCommand($@"insert into {DBTable} VALUES({strInsertCommand})", conn);
-                    Console.WriteLine(cmd.CommandText);
-
-                    //add a check to ensure each row is added
-                    //catch error, put all failed rows into a log.txt file
-                    cmd.ExecuteNonQuery();
-                }
-                PrintColourMessage(ConsoleColor.DarkGreen, "Number of rows added: " + Xdt.Rows.Count);
             }
-            catch (Exception ex) { PrintColourMessage(ConsoleColor.DarkRed, ex.Message + " Inner: " + ex.InnerException); }
-            finally { conn.Close(); }
+            catch (Exception ex)
+            {
+                PrintColourMessage(ConsoleColor.DarkRed, ex.Message + " Inner: " + ex.InnerException);
+            }
+            finally
+            {
+                conn.Close();
+            }
             PrintColourMessage(ConsoleColor.White, "Press any key to exit");
             Console.ReadKey();
         }
+
+        static void DeleteData(SqlConnection conn)
+        {
+            SqlCommand delTable = new SqlCommand($"DELETE FROM {DBTable}", conn);
+            delTable.ExecuteNonQuery();
+        }
+
+
+        static DataTable excelConnection()
+        {
+            string ExcelFile = ConfigurationManager.ConnectionStrings["ExcelFile"].ConnectionString;
+            OleDbConnection Xcon = new OleDbConnection(ExcelFile);
+            //OleDbDataAdapter Xda = new OleDbDataAdapter("select * from [Sheet1$]", Xcon);
+            DataTable Xdt = new DataTable();
+            return Xdt;
+        }
+
+        static SqlCommand SqlInsertStatement(DataTable Xdt, SqlConnection conn)
+        {
+            int numberOfColumns = Xdt.Columns.Count;
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = conn;
+            string strInsertCommand = "";
+
+            foreach (DataRow row in Xdt.Rows) // Loop over the rows.
+            {
+                //loop through each column here to add the values to an array
+                //swap the last two items in the array
+                //send array 
+                List<object> lstRow = new List<object>(); ;
+
+                // go through each column in the row
+                for (int i = 0; i < numberOfColumns; i++)
+                {
+                    if (i == (numberOfColumns - 1) || i == (numberOfColumns - 2))
+                    {
+                        lstRow.Add(row[i].ToString());
+                    }
+                    else
+                    {
+                        lstRow.Add(row[i]);
+                    }
+
+                    if (lstRow[i].GetType() == typeof(System.String))
+                    {
+                        lstRow[i] = "\'" + lstRow[i] + "\'";
+                    }
+                    if (lstRow[i].GetType() == typeof(System.DateTime))
+                    {
+                        // string startdate = DateTime.Parse("25/12/2008").ToString("yyyy-MM-dd");
+                        // arrRow[i] = startdate;
+                        lstRow[i] = Convert.ToString("\'2008-01-10\'");
+                    }
+
+                    //PrintColourMessage(ConsoleColor.Magenta, "Row: " + i + " " + lstRow[i].ToString() + " Type: " + lstRow[i].GetType());
+                }
+                string temp = lstRow[numberOfColumns - 1].ToString();
+                lstRow[numberOfColumns - 1] = lstRow[numberOfColumns - 2];
+                lstRow[numberOfColumns - 2] = temp;
+
+
+                foreach (object item in lstRow)
+                {
+                    strInsertCommand += item + ", ";
+                }
+                strInsertCommand = strInsertCommand.Remove(strInsertCommand.Length - 2); //removes trailing space and comma
+                PrintColourMessage(ConsoleColor.Yellow, strInsertCommand);
+                Console.WriteLine(cmd.CommandText);
+
+            }
+            cmd.CommandText = $@"insert into {DBTable} VALUES({strInsertCommand})";
+            return cmd;
+        }
+
+
+        static void connectToDB(SqlCommand cmd)
+        {
+            cmd.ExecuteNonQuery();
+        }
+
+
+
         /// <summary>
         /// Outputs a coloured messsage to the console
         /// </summary>
@@ -103,6 +148,12 @@ namespace xlsxToDataBase
     }
 }
 
+
+/*
+    Connect to Excel spreadsheet / Get data out into DataTable - excelConnection()
+    Manipulate data / prep insert statement - sqlStatement()
+    Connect to Database / Delete current data in table / Upload new data - dbManipulate()
+*/
 ///<future>
 ///Location for the file to be dropped
 ///place for application to watch folder
