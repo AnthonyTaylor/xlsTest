@@ -13,6 +13,7 @@ namespace xlsxToDataBase
         static string DBString = ConfigurationManager.ConnectionStrings["DBString"].ConnectionString;
         static string DBTable = ConfigurationManager.AppSettings["dbTable"];
 
+
         static void Main(string[] args)
         {
             //DB connection
@@ -52,21 +53,26 @@ namespace xlsxToDataBase
             Console.ReadKey();
         }
 
+
         static SqlCommand SqlDeleteCommand(SqlConnection conn)
         {
              return new SqlCommand($"DELETE FROM {DBTable}", conn);
-          
         }
 
-
+        /// <summary>
+        /// Issue is here, not pulling data out
+        /// </summary>
+        /// <returns></returns>
         static DataTable excelConnection()
         {
             string ExcelFile = ConfigurationManager.ConnectionStrings["ExcelFile"].ConnectionString;
             OleDbConnection Xcon = new OleDbConnection(ExcelFile);
-            //OleDbDataAdapter Xda = new OleDbDataAdapter("select * from [Sheet1$]", Xcon);
+            OleDbDataAdapter Xda = new OleDbDataAdapter("select * from [Sheet1$]", Xcon);
             DataTable Xdt = new DataTable();
+            Xda.Fill(Xdt);
             return Xdt;
         }
+
 
         static SqlCommand SqlInsertStatement(DataTable Xdt, SqlConnection conn)
         {
@@ -78,6 +84,7 @@ namespace xlsxToDataBase
 
             foreach (DataRow row in Xdt.Rows) // Loop over the rows.
             {
+
                 //loop through each column here to add the values to an array
                 //swap the last two items in the array
                 //send array 
@@ -118,11 +125,12 @@ namespace xlsxToDataBase
                     strInsertCommand += item + ", ";
                 }
                 strInsertCommand = strInsertCommand.Remove(strInsertCommand.Length - 2); //removes trailing space and comma
-                PrintColourMessage(ConsoleColor.Yellow, strInsertCommand);
-                Console.WriteLine(cmd.CommandText);
+                //PrintColourMessage(ConsoleColor.Yellow, strInsertCommand);
+                //Console.WriteLine(cmd.CommandText);
 
             }
             cmd.CommandText = $@"insert into {DBTable} VALUES({strInsertCommand})";
+            PrintColourMessage(ConsoleColor.Yellow, "Insert command generated");
             return cmd;
         }
 
@@ -155,6 +163,8 @@ namespace xlsxToDataBase
     Manipulate data / prep insert statement - sqlStatement()
     Connect to Database / Delete current data in table / Upload new data - dbManipulate()
 */
+
+
 ///<future>
 ///Location for the file to be dropped
 ///place for application to watch folder
